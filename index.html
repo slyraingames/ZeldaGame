@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project: King's Key</title>
+    <style>
+        /* Basic styling to center the game canvas and add a simple background */
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        /* Style for the canvas to give it a border */
+        canvas {
+            background-color: #000000;
+            border: 2px solid #5c5c5c;
+            border-radius: 8px;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Project: King's Key</h1>
+    <canvas id="gameCanvas" width="800" height="608"></canvas>
+
+    <script>
+        // --- GAME SETUP ---
+        // This section initializes the game canvas and its 2D rendering context.
+        // All drawing operations will be performed on this context.
+
+        /**
+         * The main canvas element where the game is drawn.
+         * @type {HTMLCanvasElement}
+         */
+        const canvas = document.getElementById('gameCanvas');
+
+        /**
+         * The 2D rendering context for the canvas.
+         * @type {CanvasRenderingContext2D}
+         */
+        const ctx = canvas.getContext('2d');
+
+        // --- GAME ASSETS & CONFIGURATION ---
+        // As per the GDD, we are using 32x32 pixel sprites/tiles.
+        // The canvas dimensions are set to be a multiple of this tile size.
+        const TILE_SIZE = 32;
+
+
+        // --- PLAYER SETUP ---
+        // This object represents the player character. It holds all player-specific
+        // data like position, size, and movement speed.
+        // As per GDD 9.1, we start with a simple blue square for the player.
+        const player = {
+            x: canvas.width / 2 - TILE_SIZE / 2, // Start in the center horizontally
+            y: canvas.height / 2 - TILE_SIZE / 2, // Start in the center vertically
+            width: TILE_SIZE,
+            height: TILE_SIZE,
+            color: '#3498db', // A simple blue color for the placeholder
+            speed: 4,
+            dx: 0, // Change in x-direction
+            dy: 0  // Change in y-direction
+        };
+
+        // --- INPUT HANDLING ---
+        // This object will store the current state of the keyboard keys (pressed or not).
+        // This allows for smooth movement, as we can check the state in the game loop
+        // rather than reacting to single key press events.
+        const keys = {
+            w: false, a: false, s: false, d: false,
+            ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false
+        };
+
+        /**
+         * Event listener for when a key is pressed down.
+         * It sets the corresponding key's state to 'true' in our 'keys' object.
+         * @param {KeyboardEvent} e - The keyboard event object.
+         */
+        function keyDown(e) {
+            if (keys.hasOwnProperty(e.key)) {
+                keys[e.key] = true;
+            }
+        }
+
+        /**
+         * Event listener for when a key is released.
+         * It sets the corresponding key's state to 'false' in our 'keys' object.
+         * @param {KeyboardEvent} e - The keyboard event object.
+         */
+        function keyUp(e) {
+            if (keys.hasOwnProperty(e.key)) {
+                keys[e.key] = false;
+            }
+        }
+
+        // Attach the event listeners to the window.
+        window.addEventListener('keydown', keyDown);
+        window.addEventListener('keyup', keyUp);
+
+
+        // --- GAME LOGIC & UPDATES ---
+
+        /**
+         * Clears the canvas for the next frame.
+         * This must be called at the beginning of each drawing cycle.
+         */
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // We can also redraw a background color if we want.
+            ctx.fillStyle = '#2c3e50'; // A dark slate blue for the background
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        /**
+         * Draws the player character on the canvas.
+         * For now, it's just a colored rectangle.
+         */
+        function drawPlayer() {
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+        }
+
+        /**
+         * Updates the player's movement direction based on currently pressed keys.
+         * As per GDD 3.1, it supports both WASD and Arrow Keys.
+         */
+        function updatePlayerMovement() {
+            // Reset movement deltas
+            player.dx = 0;
+            player.dy = 0;
+
+            // Vertical movement
+            if (keys.w || keys.ArrowUp) {
+                player.dy = -player.speed;
+            } else if (keys.s || keys.ArrowDown) {
+                player.dy = player.speed;
+            }
+
+            // Horizontal movement
+            if (keys.a || keys.ArrowLeft) {
+                player.dx = -player.speed;
+            } else if (keys.d || keys.ArrowRight) {
+                player.dx = player.speed;
+            }
+        }
+
+        /**
+         * Moves the player and ensures they do not go outside the canvas boundaries.
+         */
+        function movePlayer() {
+            player.x += player.dx;
+            player.y += player.dy;
+
+            // Boundary detection
+            // Left boundary
+            if (player.x < 0) {
+                player.x = 0;
+            }
+            // Right boundary
+            if (player.x + player.width > canvas.width) {
+                player.x = canvas.width - player.width;
+            }
+            // Top boundary
+            if (player.y < 0) {
+                player.y = 0;
+            }
+            // Bottom boundary
+            if (player.y + player.height > canvas.height) {
+                player.y = canvas.height - player.height;
+            }
+        }
+
+        /**
+         * The main update function for the game.
+         * This function is called every frame and is responsible for updating
+         * the state of all game objects before they are drawn.
+         */
+        function update() {
+            updatePlayerMovement();
+            movePlayer();
+            // In the future, we'll update enemies, check for collisions, etc. here.
+        }
+
+        /**
+         * The main draw function for the game.
+         * This function is called every frame and is responsible for drawing
+         * all game objects to the canvas.
+         */
+        function draw() {
+            clearCanvas();
+            drawPlayer();
+            // In the future, we'll draw the map, enemies, UI, etc. here.
+        }
+
+
+        // --- GAME LOOP ---
+        // The core of the game. It runs continuously to create animation and interactivity.
+        // It uses requestAnimationFrame for smooth, efficient rendering.
+
+        /**
+         * The main game loop.
+         * It calls the update and draw functions, and then requests the next frame.
+         */
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start the game loop!
+        gameLoop();
+
+    </script>
+</body>
+</html>
